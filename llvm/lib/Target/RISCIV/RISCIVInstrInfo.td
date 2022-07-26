@@ -1180,7 +1180,44 @@ def : Pat<(add GPR:$rs1, (AddiPair:$rs2)),
                 (AddiPairImmA GPR:$rs2))>;
 
 //===----------------------------------------------------------------------===//
-// Standard extensions
+// RISC-V specific DAG Nodes.
 //===----------------------------------------------------------------------===//
 
-include "RISCIVInstrInfoM.td"
+def risciv_mulhsu : SDNode<"RISCIVISD::MULHSU", SDTIntBinOp>;
+def risciv_divw  : SDNode<"RISCIVISD::DIVW",  SDT_RISCIVIntBinOpW>;
+def risciv_divuw : SDNode<"RISCIVISD::DIVUW", SDT_RISCIVIntBinOpW>;
+def risciv_remuw : SDNode<"RISCIVISD::REMUW", SDT_RISCIVIntBinOpW>;
+
+//===----------------------------------------------------------------------===//
+// Instructions
+//===----------------------------------------------------------------------===//
+
+def MUL    : ALU_rr<0b0000001, 0b000, "mul">,
+             Sched<[WriteIMul, ReadIMul, ReadIMul]>;
+def MULH   : ALU_rr<0b0000001, 0b001, "mulh">,
+             Sched<[WriteIMul, ReadIMul, ReadIMul]>;
+def MULHSU : ALU_rr<0b0000001, 0b010, "mulhsu">,
+             Sched<[WriteIMul, ReadIMul, ReadIMul]>;
+def MULHU  : ALU_rr<0b0000001, 0b011, "mulhu">,
+             Sched<[WriteIMul, ReadIMul, ReadIMul]>;
+def DIV    : ALU_rr<0b0000001, 0b100, "div">,
+             Sched<[WriteIDiv, ReadIDiv, ReadIDiv]>;
+def DIVU   : ALU_rr<0b0000001, 0b101, "divu">,
+             Sched<[WriteIDiv, ReadIDiv, ReadIDiv]>;
+def REM    : ALU_rr<0b0000001, 0b110, "rem">,
+             Sched<[WriteIDiv, ReadIDiv, ReadIDiv]>;
+def REMU   : ALU_rr<0b0000001, 0b111, "remu">,
+             Sched<[WriteIDiv, ReadIDiv, ReadIDiv]>;
+
+//===----------------------------------------------------------------------===//
+// Pseudo-instructions and codegen patterns
+//===----------------------------------------------------------------------===//
+
+def : PatGprGpr<mul, MUL>;
+def : PatGprGpr<mulhs, MULH>;
+def : PatGprGpr<mulhu, MULHU>;
+def : PatGprGpr<risciv_mulhsu, MULHSU>;
+def : PatGprGpr<sdiv, DIV>;
+def : PatGprGpr<udiv, DIVU>;
+def : PatGprGpr<srem, REM>;
+def : PatGprGpr<urem, REMU>;
