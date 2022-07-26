@@ -62,24 +62,6 @@ static SDNode *selectImm(SelectionDAG *CurDAG, const SDLoc &DL, int64_t Imm,
   return Result;
 }
 
-static SDValue createTupleImpl(SelectionDAG &CurDAG, ArrayRef<SDValue> Regs,
-                               unsigned RegClassID, unsigned SubReg0) {
-  assert(Regs.size() >= 2 && Regs.size() <= 8);
-
-  SDLoc DL(Regs[0]);
-  SmallVector<SDValue, 8> Ops;
-
-  Ops.push_back(CurDAG.getTargetConstant(RegClassID, DL, MVT::i32));
-
-  for (unsigned I = 0; I < Regs.size(); ++I) {
-    Ops.push_back(Regs[I]);
-    Ops.push_back(CurDAG.getTargetConstant(SubReg0 + I, DL, MVT::i32));
-  }
-  SDNode *N =
-      CurDAG.getMachineNode(TargetOpcode::REG_SEQUENCE, DL, MVT::Untyped, Ops);
-  return SDValue(N, 0);
-}
-
 void RISCIVDAGToDAGISel::Select(SDNode *Node) {
   // If we have a custom node, we have already selected.
   if (Node->isMachineOpcode()) {
@@ -170,25 +152,11 @@ void RISCIVDAGToDAGISel::Select(SDNode *Node) {
 
     uint64_t C1 = N1C->getZExtValue();
 
-    // Keep track of whether this is a andi, zext.h, or zext.w.
-    bool ZExtOrANDI = isInt<12>(N1C->getSExtValue());
-    if (C1 == UINT64_C(0xFFFF) &&
-        (Subtarget->hasStdExtZbb() || Subtarget->hasStdExtZbp()))
-      ZExtOrANDI = true;
-    if (C1 == UINT64_C(0xFFFFFFFF) && Subtarget->hasStdExtZba())
-      ZExtOrANDI = true;
-
     // Clear irrelevant bits in the mask.
     if (LeftShift)
       C1 &= maskTrailingZeros<uint64_t>(C2);
     else
       C1 &= maskTrailingOnes<uint64_t>(XLen - C2);
-
-    // Some transforms should only be done if the shift has a single use or
-    // the AND would become (srli (slli X, 32), 32)
-    bool OneUseOrZExtW = N0.hasOneUse() || C1 == UINT64_C(0xFFFFFFFF);
-
-    SDValue X = N0.getOperand(0);
     break;
   }
   case ISD::BITCAST: {

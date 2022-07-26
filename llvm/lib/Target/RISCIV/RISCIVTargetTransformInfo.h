@@ -61,9 +61,9 @@ public:
     switch (K) {
     case TargetTransformInfo::RGK_Scalar:
       return TypeSize::getFixed(ST->getXLen());
+    default:
+      llvm_unreachable("Unsupported register kind");
     }
-
-    llvm_unreachable("Unsupported register kind");
   }
 
   InstructionCost getGatherScatterOpCost(unsigned Opcode, Type *DataTy,
