@@ -59,6 +59,7 @@ StringRef Triple::getArchTypeName(ArchType Kind) {
   case r600:           return "r600";
   case renderscript32: return "renderscript32";
   case renderscript64: return "renderscript64";
+  case risciv:         return "risciv";
   case riscv32:        return "riscv32";
   case riscv64:        return "riscv64";
   case shave:          return "shave";
@@ -724,6 +725,7 @@ static Triple::ObjectFormatType getDefaultFormat(const Triple &T) {
   case Triple::r600:
   case Triple::renderscript32:
   case Triple::renderscript64:
+  case Triple::risciv:
   case Triple::riscv32:
   case Triple::riscv64:
   case Triple::shave:
@@ -1293,6 +1295,7 @@ static unsigned getArchPointerBitWidth(llvm::Triple::ArchType Arch) {
   case llvm::Triple::ppcle:
   case llvm::Triple::r600:
   case llvm::Triple::renderscript32:
+  case llvm::Triple::risciv:
   case llvm::Triple::riscv32:
   case llvm::Triple::shave:
   case llvm::Triple::sparc:
@@ -1378,6 +1381,7 @@ Triple Triple::get32BitArchVariant() const {
   case Triple::ppcle:
   case Triple::r600:
   case Triple::renderscript32:
+  case Triple::risciv:
   case Triple::riscv32:
   case Triple::shave:
   case Triple::sparc:
@@ -1431,6 +1435,7 @@ Triple Triple::get64BitArchVariant() const {
   case Triple::tce:
   case Triple::tcele:
   case Triple::xcore:
+  case Triple::risciv:
     T.setArch(UnknownArch);
     break;
 
@@ -1504,6 +1509,7 @@ Triple Triple::getBigEndianArchVariant() const {
   case Triple::r600:
   case Triple::renderscript32:
   case Triple::renderscript64:
+  case Triple::risciv:
   case Triple::riscv32:
   case Triple::riscv64:
   case Triple::shave:
@@ -1598,6 +1604,7 @@ bool Triple::isLittleEndian() const {
   case Triple::r600:
   case Triple::renderscript32:
   case Triple::renderscript64:
+  case Triple::risciv:
   case Triple::riscv32:
   case Triple::riscv64:
   case Triple::shave:
