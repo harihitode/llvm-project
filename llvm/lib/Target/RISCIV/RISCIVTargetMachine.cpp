@@ -45,9 +45,6 @@ extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeRISCIVTarget() {
 }
 
 static StringRef computeDataLayout(const Triple &TT) {
-  if (TT.isArch64Bit())
-    return "e-m:e-p:64:64-i64:64-i128:128-n64-S128";
-  assert(TT.isArch32Bit() && "only RV32 and RV64 are currently supported");
   return "e-m:e-p:32:32-i64:64-n32-S128";
 }
 
