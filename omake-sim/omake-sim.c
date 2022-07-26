@@ -52,6 +52,9 @@ int main(int argc, char *argv[]) {
   }
   // set stack pointer
   sim_write_register(sim, 2, 0x00001000);
+  // set reterun address
+  sim_write_register(sim, 1, 0x80000000);
+  sim_write_memory(sim, 0x80000000, 0x00100073); // ebreak;
   // set simulation trap
   sim_trap(sim, callback);
   signal(SIGINT, shndl);

@@ -381,10 +381,6 @@ void sim_step(sim_t *sim) {
     }
     break;
   case OPCODE_JALR:
-    // for omake simulator, ret causes exception
-    if (rd == 0) {
-      csr_trap(sim->csr, TRAP_CODE_BREAKPOINT);
-    }
     sim->pc = src1 + immediate;
     break;
   case OPCODE_JAL:
