@@ -38,9 +38,6 @@ RISCIVTargetELFStreamer::RISCIVTargetELFStreamer(MCStreamer &S,
 
   unsigned EFlags = MCA.getELFHeaderEFlags();
 
-  if (Features[RISCIV::FeatureStdExtC])
-    EFlags |= ELF::EF_RISCV_RVC;
-
   switch (ABI) {
   case RISCIVABI::ABI_ILP32:
   case RISCIVABI::ABI_LP64:

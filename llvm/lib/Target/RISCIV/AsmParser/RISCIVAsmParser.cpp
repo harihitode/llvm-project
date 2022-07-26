@@ -227,19 +227,6 @@ public:
     Parser.addAliasForDirective(".dword", ".8byte");
     setAvailableFeatures(ComputeAvailableFeatures(STI.getFeatureBits()));
 
-    auto ABIName = StringRef(Options.ABIName);
-    if (ABIName.endswith("f") &&
-        !getSTI().getFeatureBits()[RISCIV::FeatureStdExtF]) {
-      errs() << "Hard-float 'f' ABI can't be used for a target that "
-                "doesn't support the F instruction set extension (ignoring "
-                "target-abi)\n";
-    } else if (ABIName.endswith("d") &&
-               !getSTI().getFeatureBits()[RISCIV::FeatureStdExtD]) {
-      errs() << "Hard-float 'd' ABI can't be used for a target that "
-                "doesn't support the D instruction set extension (ignoring "
-                "target-abi)\n";
-    }
-
     const MCObjectFileInfo *MOFI = Parser.getContext().getObjectFileInfo();
     ParserOptions.IsPicEnabled = MOFI->isPositionIndependent();
   }
@@ -311,6 +298,8 @@ public:
       break;
     case KindTy::VType:
       VType = o.VType;
+      break;
+    default:
       break;
     }
   }
@@ -738,6 +727,8 @@ public:
       break;
     case KindTy::SystemRegister:
       OS << "<sysreg: " << getSysReg() << '>';
+      break;
+    default:
       break;
     }
   }
@@ -1541,30 +1532,6 @@ bool RISCIVAsmParser::parseDirectiveOption() {
     if (popFeatureBits())
       return Error(StartLoc, ".option pop with no .option push");
 
-    return false;
-  }
-
-  if (Option == "rvc") {
-    getTargetStreamer().emitDirectiveOptionRVC();
-
-    Parser.Lex();
-    if (Parser.getTok().isNot(AsmToken::EndOfStatement))
-      return Error(Parser.getTok().getLoc(),
-                   "unexpected token, expected end of statement");
-
-    setFeatureBits(RISCIV::FeatureStdExtC, "c");
-    return false;
-  }
-
-  if (Option == "norvc") {
-    getTargetStreamer().emitDirectiveOptionNoRVC();
-
-    Parser.Lex();
-    if (Parser.getTok().isNot(AsmToken::EndOfStatement))
-      return Error(Parser.getTok().getLoc(),
-                   "unexpected token, expected end of statement");
-
-    clearFeatureBits(RISCIV::FeatureStdExtC, "c");
     return false;
   }
 

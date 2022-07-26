@@ -118,8 +118,8 @@ RISCIVAsmBackend::getFixupKindInfo(MCFixupKind Kind) const {
 // enabled, always emit relocations even if the fixup can be resolved. This is
 // necessary for correctness as offsets may change during relaxation.
 bool RISCIVAsmBackend::shouldForceRelocation(const MCAssembler &Asm,
-                                            const MCFixup &Fixup,
-                                            const MCValue &Target) {
+                                             const MCFixup &Fixup,
+                                             const MCValue &Target) {
   if (Fixup.getKind() >= FirstLiteralRelocationKind)
     return true;
   switch (Fixup.getTargetKind()) {
@@ -142,11 +142,11 @@ bool RISCIVAsmBackend::shouldForceRelocation(const MCAssembler &Asm,
 }
 
 bool RISCIVAsmBackend::fixupNeedsRelaxationAdvanced(const MCFixup &Fixup,
-                                                   bool Resolved,
-                                                   uint64_t Value,
-                                                   const MCRelaxableFragment *DF,
-                                                   const MCAsmLayout &Layout,
-                                                   const bool WasForced) const {
+                                                    bool Resolved,
+                                                    uint64_t Value,
+                                                    const MCRelaxableFragment *DF,
+                                                    const MCAsmLayout &Layout,
+                                                    const bool WasForced) const {
   // Return true if the symbol is actually unresolved.
   // Resolved could be always false when shouldForceRelocation return true.
   // We use !WasForced to indicate that the symbol is unresolved and not forced
@@ -170,13 +170,13 @@ bool RISCIVAsmBackend::fixupNeedsRelaxationAdvanced(const MCFixup &Fixup,
 }
 
 void RISCIVAsmBackend::relaxInstruction(MCInst &Inst,
-                                       const MCSubtargetInfo &STI) const {
+                                        const MCSubtargetInfo &STI) const {
   return;
 }
 
 bool RISCIVAsmBackend::relaxDwarfLineAddr(MCDwarfLineAddrFragment &DF,
-                                         MCAsmLayout &Layout,
-                                         bool &WasRelaxed) const {
+                                          MCAsmLayout &Layout,
+                                          bool &WasRelaxed) const {
   MCContext &C = Layout.getAssembler().getContext();
 
   int64_t LineDelta = DF.getLineDelta();
@@ -315,8 +315,7 @@ bool RISCIVAsmBackend::mayNeedRelaxation(const MCInst &Inst,
 }
 
 bool RISCIVAsmBackend::writeNopData(raw_ostream &OS, uint64_t Count) const {
-  bool HasStdExtC = STI.getFeatureBits()[RISCIV::FeatureStdExtC];
-  unsigned MinNopLen = HasStdExtC ? 2 : 4;
+  unsigned MinNopLen = 4;
 
   if ((Count % MinNopLen) != 0)
     return false;
@@ -324,11 +323,6 @@ bool RISCIVAsmBackend::writeNopData(raw_ostream &OS, uint64_t Count) const {
   // The canonical nop on RISC-V is addi x0, x0, 0.
   for (; Count >= 4; Count -= 4)
     OS.write("\x13\0\0\0", 4);
-
-  // The canonical nop on RVC is c.nop.
-  if (Count && HasStdExtC)
-    OS.write("\x01\0", 2);
-
   return true;
 }
 
@@ -547,8 +541,7 @@ bool RISCIVAsmBackend::shouldInsertExtraNopBytesForCodeAlign(
   if (!STI.getFeatureBits()[RISCIV::FeatureRelax])
     return false;
 
-  bool HasStdExtC = STI.getFeatureBits()[RISCIV::FeatureStdExtC];
-  unsigned MinNopLen = HasStdExtC ? 2 : 4;
+  unsigned MinNopLen = 4;
 
   if (AF.getAlignment() <= MinNopLen) {
     return false;

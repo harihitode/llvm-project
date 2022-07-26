@@ -166,7 +166,6 @@ bool RISCIVExpandPseudo::expandLoadAddress(
   unsigned SecondOpcode;
   unsigned FlagsHi;
   if (MF->getTarget().isPositionIndependent()) {
-    const auto &STI = MF->getSubtarget<RISCIVSubtarget>();
     SecondOpcode = RISCIV::LW;
     FlagsHi = RISCIVII::MO_GOT_HI;
   } else {
@@ -180,8 +179,6 @@ bool RISCIVExpandPseudo::expandLoadTLSIEAddress(
     MachineBasicBlock &MBB, MachineBasicBlock::iterator MBBI,
     MachineBasicBlock::iterator &NextMBBI) {
   MachineFunction *MF = MBB.getParent();
-
-  const auto &STI = MF->getSubtarget<RISCIVSubtarget>();
   unsigned SecondOpcode = RISCIV::LW;
   return expandAuipcInstPair(MBB, MBBI, NextMBBI, RISCIVII::MO_TLS_GOT_HI,
                              SecondOpcode);

@@ -697,16 +697,6 @@ def : InstAlias<"jalr $rd, $rs, $offset", (JALR GPR:$rd, GPR:$rs, simm12:$offset
 
 def : InstAlias<"fence", (FENCE 0xF, 0xF)>; // 0xF == iorw
 
-def : InstAlias<"rdinstret $rd", (CSRRS GPR:$rd, INSTRET.Encoding, X0)>;
-def : InstAlias<"rdcycle $rd",   (CSRRS GPR:$rd, CYCLE.Encoding, X0)>;
-def : InstAlias<"rdtime $rd",    (CSRRS GPR:$rd, TIME.Encoding, X0)>;
-
-let Predicates = [IsRV32] in {
-def : InstAlias<"rdinstreth $rd", (CSRRS GPR:$rd, INSTRETH.Encoding, X0)>;
-def : InstAlias<"rdcycleh $rd",   (CSRRS GPR:$rd, CYCLEH.Encoding, X0)>;
-def : InstAlias<"rdtimeh $rd",    (CSRRS GPR:$rd, TIMEH.Encoding, X0)>;
-} // Predicates = [IsRV32]
-
 def : InstAlias<"csrr $rd, $csr", (CSRRS GPR:$rd, csr_sysreg:$csr,      X0)>;
 def : InstAlias<"csrw $csr, $rs", (CSRRW      X0, csr_sysreg:$csr, GPR:$rs)>;
 def : InstAlias<"csrs $csr, $rs", (CSRRS      X0, csr_sysreg:$csr, GPR:$rs)>;
@@ -1081,60 +1071,6 @@ def : Pat<(atomic_fence (XLenVT 6), (timm)), (FENCE_TSO)>;
 // fence seq_cst -> fence rw, rw
 def : Pat<(atomic_fence (XLenVT 7), (timm)), (FENCE 0b11, 0b11)>;
 
-// Lowering for atomic load and store is defined in RISCIVInstrInfoA.td.
-// Although these are lowered to fence+load/store instructions defined in the
-// base RV32I/RV64I ISA, this lowering is only used when the A extension is
-// present. This is necessary as it isn't valid to mix __atomic_* libcalls
-// with inline atomic operations for the same object.
-
-/// Access to system registers
-
-// Helpers for defining specific operations. They are defined for each system
-// register separately. Side effect is not used because dependencies are
-// expressed via use-def properties.
-
-class ReadSysReg<SysReg SR, list<Register> Regs>
-  : Pseudo<(outs GPR:$rd), (ins),
-           [(set GPR:$rd, (risciv_read_csr (XLenVT SR.Encoding)))]>,
-    PseudoInstExpansion<(CSRRS GPR:$rd, SR.Encoding, X0)> {
-  let hasSideEffects = 0;
-  let Uses = Regs;
-}
-
-class WriteSysReg<SysReg SR, list<Register> Regs>
-  : Pseudo<(outs), (ins GPR:$val),
-           [(risciv_write_csr (XLenVT SR.Encoding), GPR:$val)]>,
-    PseudoInstExpansion<(CSRRW X0, SR.Encoding, GPR:$val)> {
-  let hasSideEffects = 0;
-  let Defs = Regs;
-}
-
-class WriteSysRegImm<SysReg SR, list<Register> Regs>
-  : Pseudo<(outs), (ins uimm5:$val),
-           [(risciv_write_csr (XLenVT SR.Encoding), uimm5:$val)]>,
-    PseudoInstExpansion<(CSRRWI X0, SR.Encoding, uimm5:$val)> {
-  let hasSideEffects = 0;
-  let Defs = Regs;
-}
-
-class SwapSysReg<SysReg SR, list<Register> Regs>
-  : Pseudo<(outs GPR:$rd), (ins GPR:$val),
-           [(set GPR:$rd, (risciv_swap_csr (XLenVT SR.Encoding), GPR:$val))]>,
-    PseudoInstExpansion<(CSRRW GPR:$rd, SR.Encoding, GPR:$val)> {
-  let hasSideEffects = 0;
-  let Uses = Regs;
-  let Defs = Regs;
-}
-
-class SwapSysRegImm<SysReg SR, list<Register> Regs>
-  : Pseudo<(outs GPR:$rd), (ins uimm5:$val),
-           [(set GPR:$rd, (risciv_swap_csr (XLenVT SR.Encoding), uimm5:$val))]>,
-    PseudoInstExpansion<(CSRRWI GPR:$rd, SR.Encoding, uimm5:$val)> {
-  let hasSideEffects = 0;
-  let Uses = Regs;
-  let Defs = Regs;
-}
-
 /// Other pseudo-instructions
 
 // Pessimistically assume the stack pointer will be clobbered
@@ -1144,17 +1080,6 @@ def ADJCALLSTACKDOWN : Pseudo<(outs), (ins i32imm:$amt1, i32imm:$amt2),
 def ADJCALLSTACKUP   : Pseudo<(outs), (ins i32imm:$amt1, i32imm:$amt2),
                               [(callseq_end timm:$amt1, timm:$amt2)]>;
 } // Defs = [X2], Uses = [X2]
-
-/// RV64 patterns
-
-let Predicates = [IsRV64, NotHasStdExtZba] in {
-def : Pat<(i64 (and GPR:$rs1, 0xffffffff)), (SRLI (SLLI GPR:$rs1, 32), 32)>;
-
-// If we're shifting a 32-bit zero extended value left by 0-31 bits, use 2
-// shifts instead of 3. This can occur when unsigned is used to index an array.
-def : Pat<(i64 (shl (and GPR:$rs1, 0xffffffff), uimm5:$shamt)),
-          (SRLI (SLLI GPR:$rs1, 32), (ImmSubFrom32 uimm5:$shamt))>;
-}
 
 /// readcyclecounter
 // On RV32, ReadCycleWide will be expanded to the suggested loop reading both

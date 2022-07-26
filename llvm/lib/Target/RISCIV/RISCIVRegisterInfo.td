@@ -71,11 +71,8 @@ let RegAltNameIndices = [ABIRegAltName] in {
   }
 }
 
-def XLenVT : ValueTypeByHwMode<[RV32, RV64],
-                               [i32,  i64]>;
-def XLenRI : RegInfoByHwMode<
-      [RV32,              RV64],
-      [RegInfo<32,32,32>, RegInfo<64,64,64>]>;
+def XLenVT : ValueTypeByHwMode<[RV32], [i32]>;
+def XLenRI : RegInfoByHwMode<[RV32], [RegInfo<32,32,32>]>;
 
 // The order of registers represents the preferred allocation sequence.
 // Registers are listed in the order caller-save, callee-save, specials.

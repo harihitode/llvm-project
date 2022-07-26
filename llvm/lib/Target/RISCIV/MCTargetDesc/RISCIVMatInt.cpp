@@ -16,37 +16,6 @@
 #include "llvm/Support/MathExtras.h"
 using namespace llvm;
 
-static int getInstSeqCost(RISCIVMatInt::InstSeq &Res, bool HasRVC) {
-  if (!HasRVC)
-    return Res.size();
-
-  int Cost = 0;
-  for (auto Instr : Res) {
-    bool Compressed;
-    switch (Instr.Opc) {
-    default: llvm_unreachable("Unexpected opcode");
-    case RISCIV::SLLI:
-    case RISCIV::SRLI:
-      Compressed = true;
-      break;
-    case RISCIV::ADDI:
-    case RISCIV::LUI:
-      Compressed = isInt<6>(Instr.Imm);
-      break;
-    }
-    // Two RVC instructions take the same space as one RVI instruction, but
-    // can take longer to execute than the single RVI instruction. Thus, we
-    // consider that two RVC instruction are slightly more costly than one
-    // RVI instruction. For longer sequences of RVC instructions the space
-    // savings can be worth it, though. The costs below try to model that.
-    if (!Compressed)
-      Cost += 100; // Baseline cost of one RVI instruction: 100%.
-    else
-      Cost += 70; // 70% cost of baseline.
-  }
-  return Cost;
-}
-
 // Recursively generate a sequence for materializing an integer.
 static void generateInstSeqImpl(int64_t Val,
                                 const FeatureBitset &ActiveFeatures,
@@ -171,7 +140,6 @@ int getIntMatCost(const APInt &Val, unsigned Size,
                   const FeatureBitset &ActiveFeatures,
                   bool CompressionCost) {
   bool IsRV64 = ActiveFeatures[RISCIV::Feature64Bit];
-  bool HasRVC = CompressionCost && ActiveFeatures[RISCIV::FeatureStdExtC];
   int PlatRegSize = IsRV64 ? 64 : 32;
 
   // Split the constant into platform register sized chunks, and calculate cost
@@ -180,7 +148,7 @@ int getIntMatCost(const APInt &Val, unsigned Size,
   for (unsigned ShiftVal = 0; ShiftVal < Size; ShiftVal += PlatRegSize) {
     APInt Chunk = Val.ashr(ShiftVal).sextOrTrunc(PlatRegSize);
     InstSeq MatSeq = generateInstSeq(Chunk.getSExtValue(), ActiveFeatures);
-    Cost += getInstSeqCost(MatSeq, HasRVC);
+    Cost += MatSeq.size();
   }
   return std::max(1, Cost);
 }

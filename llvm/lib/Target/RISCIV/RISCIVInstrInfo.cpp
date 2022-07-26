@@ -101,13 +101,6 @@ unsigned RISCIVInstrInfo::isStoreToStackSlot(const MachineInstr &MI,
   return 0;
 }
 
-static bool forwardCopyWillClobberTuple(unsigned DstReg, unsigned SrcReg,
-                                        unsigned NumRegs) {
-  // We really want the positive remainder mod 32 here, that happens to be
-  // easily obtainable with a mask.
-  return ((DstReg - SrcReg) & 0x1f) < NumRegs;
-}
-
 void RISCIVInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
                                  MachineBasicBlock::iterator MBBI,
                                  const DebugLoc &DL, MCRegister DstReg,
@@ -720,12 +713,8 @@ outliner::OutlinedFunction RISCIVInstrInfo::getOutliningCandidateInfo(
   for (auto &C : RepeatedSequenceLocs)
     C.setCallInfo(MachineOutlinerDefault, CallOverhead);
 
-  // jr t0 = 4 bytes, 2 bytes if compressed instructions are enabled.
+  // jr t0 = 4 bytes
   unsigned FrameOverhead = 4;
-  if (RepeatedSequenceLocs[0].getMF()->getSubtarget()
-          .getFeatureBits()[RISCIV::FeatureStdExtC])
-    FrameOverhead = 2;
-
   return outliner::OutlinedFunction(RepeatedSequenceLocs, SequenceSize,
                                     FrameOverhead, MachineOutlinerDefault);
 }

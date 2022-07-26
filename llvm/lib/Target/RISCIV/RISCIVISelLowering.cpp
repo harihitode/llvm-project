@@ -124,44 +124,9 @@ RISCIVTargetLowering::RISCIVTargetLowering(const TargetMachine &TM,
   setOperationAction(ISD::SRL_PARTS, XLenVT, Custom);
   setOperationAction(ISD::SRA_PARTS, XLenVT, Custom);
 
-  if (Subtarget.hasStdExtZbp()) {
-    // Custom lower bswap/bitreverse so we can convert them to GREVI to enable
-    // more combining.
-    setOperationAction(ISD::BITREVERSE, XLenVT,   Custom);
-    setOperationAction(ISD::BSWAP,      XLenVT,   Custom);
-    setOperationAction(ISD::BITREVERSE, MVT::i8,  Custom);
-    // BSWAP i8 doesn't exist.
-    setOperationAction(ISD::BITREVERSE, MVT::i16, Custom);
-    setOperationAction(ISD::BSWAP,      MVT::i16, Custom);
-
-    if (Subtarget.is64Bit()) {
-      setOperationAction(ISD::BITREVERSE, MVT::i32, Custom);
-      setOperationAction(ISD::BSWAP,      MVT::i32, Custom);
-    }
-  } else {
-    // With Zbb we have an XLen rev8 instruction, but not GREVI. So we'll
-    // pattern match it directly in isel.
-    setOperationAction(ISD::BSWAP, XLenVT,
-                       Subtarget.hasStdExtZbb() ? Legal : Expand);
-  }
-
-  if (Subtarget.hasStdExtZbb()) {
-    setOperationAction(ISD::SMIN, XLenVT, Legal);
-    setOperationAction(ISD::SMAX, XLenVT, Legal);
-    setOperationAction(ISD::UMIN, XLenVT, Legal);
-    setOperationAction(ISD::UMAX, XLenVT, Legal);
-
-    if (Subtarget.is64Bit()) {
-      setOperationAction(ISD::CTTZ, MVT::i32, Custom);
-      setOperationAction(ISD::CTTZ_ZERO_UNDEF, MVT::i32, Custom);
-      setOperationAction(ISD::CTLZ, MVT::i32, Custom);
-      setOperationAction(ISD::CTLZ_ZERO_UNDEF, MVT::i32, Custom);
-    }
-  } else {
-    setOperationAction(ISD::CTTZ, XLenVT, Expand);
-    setOperationAction(ISD::CTLZ, XLenVT, Expand);
-    setOperationAction(ISD::CTPOP, XLenVT, Expand);
-  }
+  setOperationAction(ISD::CTTZ, XLenVT, Expand);
+  setOperationAction(ISD::CTLZ, XLenVT, Expand);
+  setOperationAction(ISD::CTPOP, XLenVT, Expand);
 
   setOperationAction(ISD::GlobalAddress, XLenVT, Custom);
   setOperationAction(ISD::BlockAddress, XLenVT, Custom);
@@ -198,14 +163,6 @@ RISCIVTargetLowering::RISCIVTargetLowering(const TargetMachine &TM,
   setTargetDAGCombine(ISD::XOR);
   setTargetDAGCombine(ISD::ANY_EXTEND);
   setTargetDAGCombine(ISD::ZERO_EXTEND);
-  if (Subtarget.hasStdExtV()) {
-    setTargetDAGCombine(ISD::FCOPYSIGN);
-    setTargetDAGCombine(ISD::MGATHER);
-    setTargetDAGCombine(ISD::MSCATTER);
-    setTargetDAGCombine(ISD::SRA);
-    setTargetDAGCombine(ISD::SRL);
-    setTargetDAGCombine(ISD::SHL);
-  }
 }
 
 EVT RISCIVTargetLowering::getSetCCResultType(const DataLayout &DL,
@@ -397,7 +354,7 @@ static unsigned getBranchOpcodeForIntCondCode(ISD::CondCode CC) {
 }
 
 SDValue RISCIVTargetLowering::LowerOperation(SDValue Op,
-                                            SelectionDAG &DAG) const {
+                                             SelectionDAG &DAG) const {
   switch (Op.getOpcode()) {
   default:
     report_fatal_error("unimplemented operand");
@@ -1866,11 +1823,6 @@ SDValue RISCIVTargetLowering::LowerFormalArguments(
   case CallingConv::C:
   case CallingConv::Fast:
     break;
-  case CallingConv::GHC:
-    if (!MF.getSubtarget().getFeatureBits()[RISCIV::FeatureStdExtF] ||
-        !MF.getSubtarget().getFeatureBits()[RISCIV::FeatureStdExtD])
-      report_fatal_error(
-        "GHC calling convention requires the F and D instruction set extensions");
   }
 
   const Function &Func = MF.getFunction();
@@ -2897,13 +2849,3 @@ RISCIVTargetLowering::getRegisterByName(const char *RegName, LLT VT,
                              StringRef(RegName) + "\"."));
   return Reg;
 }
-
-namespace llvm {
-namespace RISCIVVIntrinsicsTable {
-
-#define GET_RISCIVVIntrinsicsTable_IMPL
-#include "RISCIVGenSearchableTables.inc"
-
-} // namespace RISCIVVIntrinsicsTable
-
-} // namespace llvm

@@ -12,7 +12,6 @@ tablegen(LLVM RISCIVGenMCCodeEmitter.inc -gen-emitter)
 tablegen(LLVM RISCIVGenMCPseudoLowering.inc -gen-pseudo-lowering)
 tablegen(LLVM RISCIVGenRegisterBank.inc -gen-register-bank)
 tablegen(LLVM RISCIVGenRegisterInfo.inc -gen-register-info)
-tablegen(LLVM RISCIVGenSearchableTables.inc -gen-searchable-tables)
 tablegen(LLVM RISCIVGenSubtargetInfo.inc -gen-subtarget)
 
 add_public_tablegen_target(RISCIVCommonTableGen)

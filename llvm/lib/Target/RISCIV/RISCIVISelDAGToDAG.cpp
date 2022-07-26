@@ -30,11 +30,9 @@ using namespace llvm;
 
 #define DEBUG_TYPE "risciv-isel"
 
-namespace llvm {
-namespace RISCIV {
-#include "RISCIVGenSearchableTables.inc"
-} // namespace RISCIV
-} // namespace llvm
+void RISCIVDAGToDAGISel::PreprocessISelDAG() {
+  return;
+}
 
 void RISCIVDAGToDAGISel::PostprocessISelDAG() {
   doPeepholeLoadStoreADDI();
