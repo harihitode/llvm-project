@@ -501,7 +501,70 @@ def SLLI : Shift_ri<0b00000, 0b001, "slli">;
 def SRLI : Shift_ri<0b00000, 0b101, "srli">;
 def SRAI : Shift_ri<0b01000, 0b101, "srai">;
 
-def ADD  : ALU_rr<0b0000000, 0b000, "add">, Sched<[WriteIALU, ReadIALU, ReadIALU]>;
+let hasSideEffects = 0, mayLoad = 0, mayStore = 0 in
+{
+// def ADD  : ALU_rr<0b0000000, 0b000, "add">, Sched<[WriteIALU, ReadIALU, ReadIALU]>;
+// def ADD  : RVInst<(outs GPR:$rd), (ins GPR:$rs1, GPR:$rs2),
+//                   "add", "$rd, $rs1, $rs2", [], InstFormatR> {
+//   bits<5> rs2;
+//   bits<5> rs1;
+//   bits<5> rd;
+
+//   let Inst{31-25} = 0b0000000;
+//   let Inst{24-20} = rs2;
+//   let Inst{19-15} = rs1;
+//   let Inst{14-12} = 0b000;
+//   let Inst{11-7} = rd;
+//   let Opcode = 0b0110011;
+// }
+def ADD : Instruction {
+  field bits<32> Inst;
+  field bits<32> SoftFail = 0;
+  let Size = 4;
+
+  let Namespace = "RISCIV";
+
+  bits<5> rs2;
+  bits<5> rs1;
+  bits<5> rd;
+  dag OutOperandList = (outs GPR:$rd);
+  dag InOperandList = (ins GPR:$rs1, GPR:$rs2);
+
+  let AsmString = "お父様！加算ですわよ！\t$rd, $rs1, $rs2";
+  let Pattern = [(set GPR:$rd, (add GPR:$rs1, GPR:$rs2))];
+
+  let Inst{31-25} = 0b0000000;
+  let Inst{24-20} = rs2;
+  let Inst{19-15} = rs1;
+  let Inst{14-12} = 0b000;
+  let Inst{11-7} = rd;
+  let Inst{6-0} = 0b0110011;
+
+  // risc-v
+  let TSFlags{4-0} = 0b00001; // InstFormatR
+
+  RISCIVVConstraint RVVConstraint = NoConstraint;
+  let TSFlags{7-5} = RVVConstraint.Value;
+
+  bits<3> VLMul = 0;
+  let TSFlags{10-8} = VLMul;
+
+  bit HasDummyMask = 0;
+  let TSFlags{11} = HasDummyMask;
+
+  bit ForceTailAgnostic = false;
+  let TSFlags{12} = ForceTailAgnostic;
+
+  bit HasMergeOp = 0;
+  let TSFlags{13} = HasMergeOp;
+
+  bit HasSEWOp = 0;
+  let TSFlags{14} = HasSEWOp;
+
+  bit HasVLOp = 0;
+  let TSFlags{15} = HasVLOp;
+}
+}
 def SUB  : ALU_rr<0b0100000, 0b000, "sub">, Sched<[WriteIALU, ReadIALU, ReadIALU]>;
 def SLL  : ALU_rr<0b0000000, 0b001, "sll">, Sched<[WriteShiftReg, ReadShiftReg, ReadShiftReg]>;
 def SLT  : ALU_rr<0b0000000, 0b010, "slt">, Sched<[WriteIALU, ReadIALU, ReadIALU]>;
@@ -818,7 +881,7 @@ def mul_oneuse : PatFrag<(ops node:$A, node:$B), (mul node:$A, node:$B), [{
 
 /// Simple arithmetic operations
 
-def : PatGprGpr<add, ADD>;
+// def : PatGprGpr<add, ADD>;
 def : PatGprSimm12<add, ADDI>;
 def : PatGprGpr<sub, SUB>;
 def : PatGprGpr<or, OR>;
